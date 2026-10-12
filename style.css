@@ -1,0 +1,829 @@
+/* planet-age — estilos propios. Los tokens y la base viven en assets/tokens.css */
+
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Colores propios del proyecto que no son tokens de la serie: el Sol y los
+   anillos de Saturno, que sobre papel piden un tono más hondo. */
+:root {
+  --sun: #f2cf8f;
+  --ring: #cfd6dd;
+}
+
+:root[data-theme="light"] {
+  --sun: #eab45a;
+  --ring: #9a8c78;
+}
+
+/* ---------- marca ---------- */
+
+.brand-orbit {
+  stroke: var(--text-2);
+}
+
+.brand-sun {
+  fill: var(--sun);
+}
+
+.brand-mark {
+  stroke: var(--accent);
+}
+
+.brand-world {
+  fill: var(--text);
+}
+
+/* ---------- armazón ---------- */
+
+.layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "dates dates"
+    "stage worlds";
+  align-content: center;
+  align-items: start;
+  gap: var(--s-4) var(--s-6);
+}
+
+/* ---------- fechas ---------- */
+
+.dates {
+  grid-area: dates;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-label {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.date-input {
+  width: 178px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  color: var(--text);
+  transition: border-color var(--t-fast) var(--ease-out);
+}
+
+.date-input:hover {
+  border-color: var(--border-strong);
+}
+
+.date-input:focus-visible {
+  outline-offset: 1px;
+  border-radius: var(--radius);
+}
+
+.date-input[aria-invalid="true"] {
+  border-color: var(--alert);
+}
+
+.dates-notes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  margin-left: auto;
+  text-align: right;
+}
+
+.console.is-error,
+.console.is-error b {
+  color: var(--alert);
+}
+
+.privacy {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 26px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+
+.chip {
+  position: relative;
+  flex: none;
+  min-height: 26px;
+  padding: 0 var(--s-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  transition:
+    color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
+}
+
+.chip:hover {
+  color: var(--alert);
+  border-color: var(--alert);
+}
+
+/* Toque cómodo sin agrandar el botón a la vista */
+.chip::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+}
+
+/* ---------- escena ---------- */
+
+.stage {
+  grid-area: stage;
+  position: sticky;
+  top: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+  /* El lado sale del alto libre de la ventana, y deja sitio a tres columnas de
+     tarjetas: escena y tarjetas caben a la vez en una pantalla de 800 px. */
+  width: clamp(372px, min(100dvh - 344px, 42vw), 456px);
+}
+
+.stage-view {
+  position: relative;
+}
+
+.stage-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  pointer-events: none;
+}
+
+.stage-hud-lapse {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.sky {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  overflow: visible;
+}
+
+.orbit {
+  transition: stroke var(--t-med) var(--ease-out);
+}
+
+.orbit.is-selected {
+  stroke: var(--accent);
+  stroke-dasharray: 2 4;
+}
+
+.sun-disc {
+  fill: var(--sun);
+  stroke: var(--rocket-line);
+  stroke-width: 1px;
+  stroke-opacity: 0.45;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Corona: dos discos tenues que respiran despacio. Con movimiento reducido se
+   quedan en el último fotograma, que es simplemente la corona abierta. */
+.sun-glow {
+  fill: var(--sun);
+  opacity: 0.07;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sun-breathe 5.5s var(--ease-in-out) infinite alternate;
+}
+
+.sun-glow + .sun-glow {
+  animation-delay: -2.2s;
+}
+
+@keyframes sun-breathe {
+  from {
+    transform: scale(0.94);
+    opacity: 0.06;
+  }
+  to {
+    transform: scale(1.1);
+    opacity: 0.15;
+  }
+}
+
+/* Lo que depende de las fechas se funde al cambiarlas */
+.sky-live {
+  transition: opacity 160ms var(--ease-out);
+}
+
+.sky-live.is-switching {
+  opacity: 0;
+}
+
+#marks.is-hidden {
+  visibility: hidden;
+}
+
+.mark-tick {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2px;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.mark.is-selected .mark-tick {
+  stroke-width: 3.5px;
+}
+
+.mark-ping {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.planet {
+  cursor: pointer;
+  outline: none;
+}
+
+.planet-hit {
+  fill: transparent;
+}
+
+.planet-ring,
+.planet-focus {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease-out);
+}
+
+.planet-ring {
+  stroke: var(--accent);
+  stroke-width: 1.5px;
+}
+
+.planet-focus {
+  stroke: var(--cold);
+  stroke-width: 2px;
+}
+
+.planet:hover .planet-ring {
+  opacity: 0.55;
+}
+
+.planet.is-selected .planet-ring {
+  opacity: 1;
+}
+
+.planet:focus-visible .planet-focus {
+  opacity: 1;
+}
+
+.planet-tag {
+  font-family: var(--font-mono);
+  font-size: var(--tag, 12px);
+  font-weight: 500;
+  fill: var(--text);
+  stroke: var(--bg);
+  stroke-width: calc(var(--tag, 12px) * 0.36);
+  stroke-linejoin: round;
+  paint-order: stroke;
+  pointer-events: none;
+}
+
+/* ---------- mundos ---------- */
+
+/* Sombra del limbo de cada disco: se funde con el fondo en oscuro; sobre papel es
+   una sombra cálida y más leve. */
+.limb-shade {
+  stop-color: #0d1117;
+}
+
+:root[data-theme="light"] .limb-shade {
+  stop-color: #5b4330;
+  stop-opacity: 0.38;
+}
+
+/* Filo de los discos: Venus o Saturno son casi del color del papel */
+.globe-rim {
+  fill: none;
+  stroke: var(--rocket-line);
+  stroke-width: 1px;
+  stroke-opacity: 0.45;
+  vector-effect: non-scaling-stroke;
+}
+
+.ring-saturn {
+  stroke: var(--ring);
+}
+
+.ring-uranus {
+  stroke: var(--text);
+}
+
+/* ---------- pie de la escena y mandos ---------- */
+
+.stage-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.35em;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.note-birthday {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* Sin fecha de nacimiento todavía no hay marcas que explicar */
+.layout.is-empty .note-birthday {
+  display: none;
+}
+
+.note-orbit {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 2.5;
+}
+
+.note-mark {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.transport-play {
+  min-width: 100px;
+}
+
+.transport-play .icon-play,
+.transport-play.is-paused .icon-pause {
+  display: none;
+}
+
+.transport-play.is-paused .icon-play {
+  display: block;
+}
+
+.transport-unit {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.transport-rewind {
+  margin-left: auto;
+}
+
+.btn--icon {
+  width: 44px;
+  padding: 0;
+}
+
+.transport-still {
+  padding: 13px 0;
+}
+
+/* Control segmentado: velocidad y orden */
+.seg {
+  display: inline-flex;
+  min-width: 0;
+  margin: 0;
+  padding: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.seg label {
+  position: relative;
+  cursor: pointer;
+}
+
+.seg input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.seg span {
+  display: block;
+  padding: 0 var(--s-3);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 26px;
+  white-space: nowrap;
+  color: var(--text-2);
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
+}
+
+/* Toque cómodo sin agrandar el control a la vista */
+.seg label::after {
+  content: "";
+  position: absolute;
+  inset: -9px 0;
+}
+
+.seg input:checked + span {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.seg input:focus-visible + span {
+  outline: 2px solid var(--cold);
+  outline-offset: 2px;
+}
+
+/* ---------- tarjetas ---------- */
+
+.worlds {
+  grid-area: worlds;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.layout.is-empty .worlds {
+  align-self: center;
+}
+
+.worlds-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-3);
+  min-height: 32px;
+}
+
+.worlds-head h2 {
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* Con sitio de sobra las filas se reparten el alto de la escena */
+.cards {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(194px, 1fr));
+  grid-auto-rows: 1fr;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 11px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+}
+
+.card.is-selected {
+  background-image: linear-gradient(var(--accent-soft), var(--accent-soft));
+  border-color: var(--accent);
+}
+
+/* Nombre y edad a la izquierda; a la derecha, la vuelta en curso */
+.card-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "head ring"
+    "age ring"
+    "laps laps";
+  align-items: center;
+  column-gap: var(--s-2);
+}
+
+.card-head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 24px;
+}
+
+.card-disc {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+
+.card-disc svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* El nombre es el botón; su ::after cubre toda la tarjeta para que se pueda
+   pulsar en cualquier punto sin anidar controles. */
+.card-pick {
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 24px;
+  color: var(--text);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card-pick::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius);
+}
+
+.card-pick:focus-visible {
+  outline: none;
+}
+
+.card-pick:focus-visible::after {
+  outline: 2px solid var(--cold);
+  outline-offset: 2px;
+}
+
+.card-age {
+  grid-area: age;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.card-age b {
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.card-age span {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+
+.card-laps {
+  grid-area: laps;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+.card.is-today .card-laps {
+  color: var(--accent);
+}
+
+.card-ring {
+  grid-area: ring;
+  position: relative;
+  width: 44px;
+  height: 44px;
+}
+
+.card-ring svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.card-ring span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.625rem;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.ring-track {
+  stroke-dasharray: 1.5 4;
+}
+
+.ring-arc {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.ring-mark {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.ring-dot {
+  fill: var(--text);
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+
+.card-next {
+  display: grid;
+  justify-items: start;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.card-next-label {
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.card-next-date {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.card-next-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  width: 100%;
+  line-height: 1.45;
+}
+
+.card-next-left {
+  font-size: 0.71875rem;
+  color: var(--accent);
+}
+
+.card-tag {
+  font-size: 0.65625rem;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+.card-tag:empty {
+  display: none;
+}
+
+/* El cumpleaños más cercano: la cuenta atrás pasa a ser una pastilla llena */
+.card.is-nearest .card-next-left {
+  padding: 0 var(--s-2);
+  background: var(--accent);
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
+/* Sin fecha de nacimiento la tarjeta se queda en lo que dura un año allí */
+.layout.is-empty .cards {
+  flex: none;
+}
+
+/* Sin cumpleaños que ordenar, el control de orden sobra */
+.layout.is-empty #sort {
+  display: none;
+}
+
+.card.is-empty .card-ring,
+.card.is-empty .card-next {
+  display: none;
+}
+
+/* ---------- pantallas estrechas ---------- */
+
+@media (max-width: 899px) {
+  .page {
+    gap: var(--s-4);
+  }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "dates"
+      "stage"
+      "worlds";
+    align-content: start;
+    gap: var(--s-4);
+  }
+
+  .stage {
+    position: static;
+    justify-self: center;
+    width: min(100%, 520px);
+  }
+
+  /* Con la escena a todo el ancho, la órbita de Plutón roza las esquinas:
+     el rótulo sale de encima y pasa a su propia línea. */
+  .stage-hud {
+    position: static;
+    margin-bottom: var(--s-1);
+  }
+
+  .layout.is-empty .worlds {
+    align-self: start;
+  }
+}
+
+/* Dos columnas de tarjetas más largas que la pantalla: no hay alto que repartir */
+@media (max-width: 1239px) {
+  .cards {
+    flex: none;
+    grid-auto-rows: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .dates {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: var(--s-2);
+  }
+
+  .date-input {
+    width: 100%;
+    padding: 0 var(--s-2);
+  }
+
+  .dates-notes {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+    min-height: 0;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .privacy-what {
+    display: none;
+  }
+}

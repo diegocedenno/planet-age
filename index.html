@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>planet-age — tu edad en cada planeta</title>
+  <meta name="description" content="Tu edad en los ocho planetas y Plutón, y la fecha de tu próximo cumpleaños en cada uno, con los mundos girando alrededor del Sol a su ritmo orbital real.">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/tokens.css">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="assets/starfield.js"></script>
+  <script defer src="js/ages.js"></script>
+  <script defer src="js/worlds.js"></script>
+  <script defer src="js/scene.js"></script>
+  <script defer src="js/main.js"></script>
+</head>
+<body>
+  <!-- Recorte y luz que comparten todos los discos de mundos -->
+  <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <clipPath id="pa-disc"><circle cx="60" cy="60" r="52"/></clipPath>
+      <radialGradient id="pa-light" cx="36%" cy="30%" r="80%">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+        <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+        <stop class="limb-shade" offset="1" stop-opacity="0.5"/>
+      </radialGradient>
+    </defs>
+  </svg>
+
+  <div class="page">
+    <header class="page-head">
+      <a class="brand" href="./" aria-label="planet-age, inicio">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <circle class="brand-orbit" cx="16" cy="16" r="13.5" fill="none" stroke-width="1.5" stroke-dasharray="1.5 3.2" stroke-linecap="round"/>
+          <circle class="brand-orbit" cx="16" cy="16" r="7.5" fill="none" stroke-width="1.5" stroke-dasharray="1.5 3.2" stroke-linecap="round"/>
+          <circle class="brand-sun" cx="16" cy="16" r="3.4"/>
+          <path class="brand-mark" d="M16 0.6V5" fill="none" stroke-width="1.8" stroke-linecap="round"/>
+          <circle class="brand-world" cx="25.5" cy="6.5" r="2.6"/>
+          <circle class="brand-world" cx="9.5" cy="19.8" r="1.7"/>
+        </svg>
+        planet-age
+      </a>
+      <p class="console" id="status" role="status">status: <b>esperando tu fecha</b></p>
+      <button type="button" class="theme-toggle" data-theme-toggle role="switch" aria-checked="false" aria-label="Modo claro">
+        <span class="theme-toggle-thumb" aria-hidden="true">
+          <svg class="theme-toggle-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>
+          <svg class="theme-toggle-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+      </button>
+    </header>
+
+    <main class="layout" id="layout">
+      <h1 class="sr-only">planet-age: tu edad y tu próximo cumpleaños en cada planeta</h1>
+
+      <form class="dates" id="dates" aria-label="Tus fechas" novalidate>
+        <label class="field" for="birth">
+          <span class="field-label">Naciste el</span>
+          <input type="date" class="date-input mono" id="birth" name="birth" min="1900-01-01" autocomplete="bday" aria-describedby="hint">
+        </label>
+        <label class="field" for="ref">
+          <span class="field-label">Fecha de referencia</span>
+          <input type="date" class="date-input mono" id="ref" name="ref" min="1900-01-01" max="2299-12-31" aria-describedby="hint">
+        </label>
+        <button type="button" class="btn" id="today" aria-label="Usar hoy como fecha de referencia">hoy</button>
+        <div class="dates-notes">
+          <p class="console hint" id="hint" aria-live="polite">escribe tu fecha de nacimiento</p>
+          <p class="privacy">
+            <span><span class="privacy-what">tu fecha </span>solo se guarda en este navegador</span>
+            <button type="button" class="chip" id="clear" hidden>borrar</button>
+          </p>
+        </div>
+      </form>
+
+      <section class="stage" aria-label="Los nueve mundos alrededor del Sol">
+        <div class="stage-view" id="stage">
+          <div class="stage-hud" aria-hidden="true">
+            <p class="console">escena: <b class="mono" id="hud-date">—</b></p>
+            <p class="stage-hud-lapse mono" id="hud-lapse">+0 días</p>
+          </div>
+          <svg class="sky" id="sky" viewBox="-300 -300 600 600" role="group" aria-label="Sistema solar esquemático" aria-describedby="scene-desc">
+            <g id="orbits" aria-hidden="true"></g>
+            <g class="sun" aria-hidden="true">
+              <circle class="sun-glow" r="27"/>
+              <circle class="sun-glow" r="19.5"/>
+              <circle class="sun-disc" r="12.5"/>
+            </g>
+            <!-- Lo que depende de las fechas: se funde al cambiarlas -->
+            <g class="sky-live" id="sky-live">
+              <g id="marks" aria-hidden="true"></g>
+              <g id="planets" role="toolbar" aria-label="Mundos de la escena: flechas para recorrerlos, Enter para elegir"></g>
+              <text class="planet-tag" id="tag" text-anchor="middle" aria-hidden="true"></text>
+            </g>
+          </svg>
+        </div>
+
+        <p class="stage-note">
+          <span class="note-birthday">
+            <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="note-orbit" d="M0 6H12"/><path class="note-mark" d="M6 1V11"/></svg>
+            tu punto de cumpleaños ·
+          </span>
+          <span>órbitas comprimidas, no a escala</span>
+        </p>
+
+        <div class="transport" id="transport">
+          <button type="button" class="btn transport-play" id="play" aria-label="Pausar la escena">
+            <svg class="icon-pause" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+            <svg class="icon-play" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.2v13.6a.8.8 0 0 0 1.2.7l11-6.8a.8.8 0 0 0 0-1.4l-11-6.8a.8.8 0 0 0-1.2.7Z" fill="currentColor"/></svg>
+            <span id="play-label">pausa</span>
+          </button>
+          <fieldset class="seg" id="speed">
+            <legend class="sr-only">Velocidad de la escena, en días por segundo</legend>
+            <label><input type="radio" name="speed" value="10"><span>10</span></label>
+            <label><input type="radio" name="speed" value="30" checked><span>30</span></label>
+            <label><input type="radio" name="speed" value="120"><span>120</span></label>
+          </fieldset>
+          <span class="transport-unit" aria-hidden="true">días/s</span>
+          <button type="button" class="btn btn--icon transport-rewind" id="rewind" aria-label="Volver la escena a la fecha de referencia" title="Volver a la fecha de referencia">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.3-5.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4.6 3.8v4.4H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <p class="console transport-still" id="still" hidden>movimiento reducido · escena quieta en esa fecha</p>
+        <p class="sr-only" id="scene-desc"></p>
+      </section>
+
+      <section class="worlds" aria-labelledby="worlds-title">
+        <div class="worlds-head">
+          <h2 class="console" id="worlds-title">un año en nueve mundos</h2>
+          <fieldset class="seg" id="sort">
+            <legend class="sr-only">Orden de las tarjetas</legend>
+            <label><input type="radio" name="sort" value="sun" checked><span>distancia al Sol</span></label>
+            <label><input type="radio" name="sort" value="next"><span>próximo cumpleaños</span></label>
+          </fieldset>
+        </div>
+        <ul class="cards" id="cards"></ul>
+      </section>
+    </main>
+
+    <footer class="page-foot">
+      <span>planet-age · serie Plutón</span>
+      <span>hecho por <a href="https://github.com/diegocedenno">diegocedenno</a> · MIT</span>
+    </footer>
+  </div>
+</body>
+</html>
